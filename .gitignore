@@ -1,0 +1,3 @@
+﻿/storage/pos.sqlite
+/storage/*.sqlite
+/storage/*.sqlite-*
