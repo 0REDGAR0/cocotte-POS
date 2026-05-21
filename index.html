@@ -1,0 +1,173 @@
+﻿﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bienvenue - Chez Cocotte</title>
+  <link rel="stylesheet" href="css/style.css?v=dev-20260508-03">
+
+  <!-- Apparence PWA / mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#e9d2ae">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cocotte Commande">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+
+  <style>
+    body {
+      font-family: 'CocotteFont', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #e9d2ae;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    header h1 {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    header img {
+      height: 40px;
+      cursor: pointer;
+    }
+
+    .main-container {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 20px;
+      gap: 30px;
+      justify-content: center;
+    }
+
+    .welcome-box {
+      flex: 1 1 400px;
+      max-width: 500px;
+      background-color: #f9f9f9;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .welcome-box h1 {
+      font-size: 22px;
+      color: #335533;
+      margin-bottom: 15px;
+    }
+
+    .welcome-box p {
+      margin: 10px 0;
+      line-height: 1.5;
+      font-size: 16px;
+    }
+
+    .button-column {
+      flex: 1 1 300px;
+      max-width: 350px;
+    }
+
+    .menu-group {
+      margin-bottom: 30px;
+    }
+
+    .menu-group h2 {
+      font-size: 18px;
+      color: #335533;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .button-row button {
+      padding: 10px 20px;
+      font-size: 16px;
+      min-width: 120px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="page-home">
+  <header>
+    <img src="assets/logo.png" alt="Logo Chez Cocotte" onclick="location.href='index.html'">
+    <h1>BIENVENUE</h1>
+    <div class="server-status" id="server-status" aria-live="polite" aria-label="Etat serveur">
+      <span class="server-status-item server-status-item-internet" data-server-status="internet">
+        <span class="server-status-label">Internet</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-battery" data-server-status="battery">
+        <span class="server-status-label">Batterie</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-time" data-server-status="time">
+        <span class="server-status-value" id="clock">HH:MM:SS</span>
+      </span>
+      <button type="button" class="header-theme-btn" title="Activer le mode sombre" aria-label="Activer le mode sombre" aria-pressed="false">◐</button>
+      <button type="button" class="header-refresh-btn" title="Recharger la page" aria-label="Recharger la page">↻</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <!-- Texte de bienvenue -->
+    <div class="welcome-box">
+      <h1>Bienvenue sur le site de prise de commandes</h1>
+      <p>Ce site a été conçu et développé par <strong>Edgar</strong> dans le cadre du projet de gestion des commandes à emporter.</p>
+      <p>Il est pensé pour être rapide, intuitif et adapté à tous les postes (<em>caisse, bar, cuisine, snack…</em>).</p>
+      <p><strong>Suggestion ?</strong> N'hésitez pas à venir m'en parler directement.</p>
+      <p><strong>Problème technique ?</strong> Signalez-le moi au plus vite pour que je puisse le corriger.</p>
+      <p>Merci pour votre utilisation et votre retour !</p>
+    </div>
+
+    <!-- Boutons -->
+    <div class="button-column">
+      <div class="menu-group">
+        <h2>Postes de travail</h2>
+        <div class="button-row">
+          <button onclick="location.href='caisse.html'">CAISSE</button>
+          <button onclick="location.href='bar.html'">BAR</button>
+          <button onclick="location.href='cuisine.html'">CUISINE</button>
+          <button onclick="location.href='snack.html'">SNACK</button>
+        </div>
+      </div>
+
+      <div class="menu-group">
+        <h2>Outils de gestion</h2>
+        <div class="button-row">
+          <button onclick="location.href='statut.html'">STATUT</button>
+          <button onclick="location.href='archive.html'">ARCHIVE</button>
+          <button onclick="location.href='admin.html'">ADMIN</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('gesturestart', function (e) {
+      e.preventDefault();
+    });
+  </script>
+
+  <script src="js/server_status.js?v=dev-20260508-03"></script>
+
+</body>
+</html>

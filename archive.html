@@ -1,0 +1,270 @@
+﻿﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>ARCHIVE</title>
+  <link rel="stylesheet" href="css/style.css?v=dev-20260510-01">
+      
+  <!-- Apparence PWA / mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#e9d2ae">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cocotte Commande">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: 'CocotteFont', sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #e9d2ae;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    header img {
+      height: 40px;
+    }
+
+    h1 {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    #clock {
+      font-size: 20px;
+      font-weight: bold;
+      width: 100px;
+      text-align: right;
+    }
+
+    #archive-container {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      font-size: 14px;
+    }
+
+    .commande-bloc {
+      border: 2px solid #335533;
+    }
+
+    .commande-header {
+      background-color: #668f61;
+      color: white;
+      padding: 5px 10px;
+      font-weight: bold;
+      font-size: 16px;
+      text-align: left;
+    }
+
+    .commande-ligne {
+      display: grid;
+      grid-template-columns: 1fr 3fr 2fr 2fr;
+      gap: 3px;
+      padding: 5px 10px;
+      border-top: 1px solid #ccc;
+    }
+
+    .commande-ligne-head {
+      font-weight: bold;
+      background-color: #eeeeee;
+    }
+
+    #stats {
+      padding: 15px;
+      background-color: #f0f0f0;
+      font-size: 14px;
+    }
+
+    #stats h2 {
+      font-size: 16px;
+      color: #335533;
+      margin-bottom: 8px;
+    }
+
+    .recap-colonnes {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 30px;
+      margin-top: 15px;
+    }
+
+    .recap-col {
+      background-color: #ffffff;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+
+    .recap-col h3 {
+      font-size: 15px;
+      margin-top: 0;
+      color: #335533;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+    }
+
+    .recap-col ul {
+      padding-left: 18px;
+      margin: 0;
+    }
+
+    .recap-col li {
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body class="page-archive">
+  <header>
+    <img src="assets/logo.png" alt="Logo" onclick="location.href='index.html'">
+    <h1>ARCHIVE</h1>
+    <div class="server-status" id="server-status" aria-live="polite" aria-label="Etat serveur">
+      <span class="server-status-item server-status-item-internet" data-server-status="internet">
+        <span class="server-status-label">Internet</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-battery" data-server-status="battery">
+        <span class="server-status-label">Batterie</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-time" data-server-status="time">
+        <span class="server-status-value" id="clock">HH:MM:SS</span>
+      </span>
+      <button type="button" class="header-refresh-btn" title="Recharger la page" aria-label="Recharger la page">↻</button>
+    </div>
+  </header>
+
+  <div id="archive-container"></div>
+  <div id="stats"></div>
+
+  <script>
+    function chargerArchive() {
+      fetch("php/get_commandes.php")
+        .then(res => res.json())
+        .then(commandes => {
+          const container = document.getElementById("archive-container");
+          const statsContainer = document.getElementById("stats");
+          container.innerHTML = "";
+          statsContainer.innerHTML = "";
+
+          const archivees = commandes.filter(cmd => cmd.statut === "terminee");
+
+          let totalVentes = 0;
+          const statsParCategorie = {
+            bar: {},
+            cuisine: {},
+            snack: {}
+          };
+
+          archivees.forEach(cmd => {
+            const bloc = document.createElement("div");
+            bloc.className = "commande-bloc";
+
+            let duree = "??:??"; // valeur par défaut
+
+            if (cmd.closed_at) {
+              const created = new Date(cmd.date.replace(" ", "T"));
+              const closed = new Date(cmd.closed_at.replace(" ", "T"));
+              const elapsed = Math.floor((closed - created) / 1000);
+              const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+              const seconds = (elapsed % 60).toString().padStart(2, '0');
+              duree = `${minutes}:${seconds}`;
+            }
+
+                      
+            const header = document.createElement("div");
+            header.className = "commande-header";
+            header.innerHTML = `COMMANDE NUMÉRO: ${cmd.id}<span class="archive-timer">⏱ ${duree}</span>`;
+
+            bloc.appendChild(header);
+
+            const headRow = document.createElement("div");
+            headRow.className = "commande-ligne commande-ligne-head";
+            headRow.innerHTML = "<div>NB</div><div>ARTICLE</div><div>CATEGORIE</div><div>PRIX</div>";
+            bloc.appendChild(headRow);
+
+            cmd.articles.forEach(art => {
+              const ligne = document.createElement("div");
+              ligne.className = "commande-ligne";
+              const prix = parseFloat(art.prix || 0);
+              const quantite = art.quantite || 1;
+
+              ligne.innerHTML = `
+                <div>${quantite}</div>
+                <div>${art.nom}</div>
+                <div>${art.categorie?.toUpperCase() || "-"}</div>
+                <div>${prix.toFixed(2)} €</div>
+              `;
+              bloc.appendChild(ligne);
+
+              // Statistiques
+              const cat = art.categorie || "autre";
+              if (!statsParCategorie[cat]) statsParCategorie[cat] = {};
+              if (art.nom && art.nom.toLowerCase().startsWith("message")) {
+                return; // Ignore les messages dans les stats
+              }
+              
+              if (!statsParCategorie[cat][art.nom]) {
+                statsParCategorie[cat][art.nom] = { quantite: 0, total: 0 };
+              }
+              
+              statsParCategorie[cat][art.nom].quantite += quantite;
+              statsParCategorie[cat][art.nom].total += prix * quantite;
+              totalVentes += prix * quantite;
+            });
+
+            container.appendChild(bloc);
+          });
+
+          // Affichage du résumé
+          const totalText = `<h2>TOTAL DES VENTES : ${totalVentes.toFixed(2)} €</h2>`;
+
+          let recapHtml = `<div class="recap-colonnes">`;
+
+          ["bar", "cuisine", "snack"].forEach(cat => {
+            recapHtml += `<div class="recap-col"><h3>${cat.toUpperCase()}</h3><ul>`;
+            const articles = statsParCategorie[cat];
+            Object.entries(articles).forEach(([nom, data]) => {
+              recapHtml += `<li>${nom} — ${data.quantite} vendu(s) — ${data.total.toFixed(2)} €</li>`;
+            });
+            recapHtml += `</ul></div>`;
+          });
+
+          recapHtml += `</div>`;
+
+          statsContainer.innerHTML = totalText + recapHtml;
+        });
+    }
+
+    setInterval(chargerArchive, 10000);
+    chargerArchive();
+
+    document.addEventListener('gesturestart', function (e) {
+      e.preventDefault();
+    });
+
+  </script>
+  <script src="js/server_status.js?v=dev-20260510-01"></script>
+</body>
+</html>

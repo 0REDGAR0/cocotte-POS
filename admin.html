@@ -1,0 +1,362 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>ADMIN</title>
+  <link rel="stylesheet" href="css/style.css?v=dev-20260510-01">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#e9d2ae">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cocotte Commande">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+
+  <style>
+    html, body {
+      margin: 0;
+      font-family: 'CocotteFont', sans-serif;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #e9d2ae;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    header h1 {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    header img {
+      height: 40px;
+    }
+
+    #admin-container {
+      display: flex;
+      flex-grow: 1;
+      overflow: hidden;
+    }
+
+    .column {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      box-sizing: border-box;
+      border-right: 1px solid #ccc;
+    }
+
+    .column:last-child {
+      border-right: none;
+    }
+
+    h2 {
+      color: #335533;
+      font-size: 18px;
+    }
+
+    input, select, button {
+      display: block;
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 5px;
+      font-size: 14px;
+    }
+
+    .article-block {
+      border: 1px solid #ccc;
+      padding: 8px;
+      margin-bottom: 5px;
+      font-size: 14px;
+      background-color: #f8f8f8;
+    }
+
+    .article-block strong {
+      display: block;
+    }
+
+    .actions {
+      display: flex;
+      gap: 5px;
+      margin-top: 5px;
+    }
+
+    .actions button {
+      flex: 1;
+      font-size: 12px;
+    }
+
+    .success, .error {
+      padding: 10px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
+</head>
+<body class="page-admin">
+  <header>
+    <img src="assets/logo.png" alt="Logo" onclick="location.href='index.html'">
+    <h1>ADMIN</h1>
+    <div class="server-status" id="server-status" aria-live="polite" aria-label="Etat serveur">
+      <span class="server-status-item server-status-item-internet" data-server-status="internet">
+        <span class="server-status-label">Internet</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-battery" data-server-status="battery">
+        <span class="server-status-label">Batterie</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-time" data-server-status="time">
+        <span class="server-status-value" id="clock">HH:MM:SS</span>
+      </span>
+      <button type="button" class="header-refresh-btn" title="Recharger la page" aria-label="Recharger la page">↻</button>
+    </div>
+  </header>
+
+  <div id="admin-container">
+    <div class="column">
+      <h2>Ajouter un article</h2>
+      <form id="add-form">
+        <input type="text" id="nom" placeholder="Nom de l'article" required>
+        <input type="number" step="0.01" id="prix" placeholder="Prix (EUR)" required>
+        <select id="categorie" required>
+          <option value="">Choisir une categorie</option>
+          <option value="bar">Bar</option>
+          <option value="cuisine">Cuisine</option>
+          <option value="snack">Snack</option>
+        </select>
+        <button type="submit">Ajouter</button>
+      </form>
+      <div id="add-message"></div>
+    </div>
+
+    <div class="column">
+      <h2>Articles existants</h2>
+      <div id="liste-articles"></div>
+    </div>
+
+    <div class="column">
+      <h2>Gestion</h2>
+      <h3>Archive</h3>
+      <button onclick="viderArchive()">Vider les commandes archivees</button>
+      <div id="archive-message"></div>
+
+      <div id="gestion-roles" class="admin-roles">
+        <h3>Role Auto-Mode</h3>
+
+        <div class="role-toggle">
+          <span>Bar :</span>
+          <button id="toggle-bar" onclick="toggleRole('bar')">Chargement...</button>
+        </div>
+        <div class="role-toggle">
+          <span>Cuisine :</span>
+          <button id="toggle-cuisine" onclick="toggleRole('cuisine')">Chargement...</button>
+        </div>
+        <div class="role-toggle">
+          <span>Snack :</span>
+          <button id="toggle-snack" onclick="toggleRole('snack')">Chargement...</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function creerBlocArticle(article, cat) {
+      const bloc = document.createElement("div");
+      bloc.className = "article-block";
+
+      const titre = document.createElement("strong");
+      titre.textContent = article.nom;
+
+      const prix = document.createElement("div");
+      prix.textContent = `Prix : ${parseFloat(article.prix).toFixed(2)} EUR`;
+
+      const actions = document.createElement("div");
+      actions.className = "actions";
+
+      const btnModifier = document.createElement("button");
+      btnModifier.textContent = "Modifier";
+      btnModifier.addEventListener("click", () => {
+        modifierArticle(article.id, article.nom, article.prix, cat);
+      });
+
+      const btnSupprimer = document.createElement("button");
+      btnSupprimer.textContent = "Supprimer";
+      btnSupprimer.addEventListener("click", () => {
+        supprimerArticle(article.id);
+      });
+
+      actions.appendChild(btnModifier);
+      actions.appendChild(btnSupprimer);
+      bloc.appendChild(titre);
+      bloc.appendChild(prix);
+      bloc.appendChild(actions);
+
+      return bloc;
+    }
+
+    function chargerArticles() {
+      fetch("php/get_articles.php")
+        .then(res => res.json())
+        .then(articles => {
+          const conteneur = document.getElementById("liste-articles");
+          conteneur.innerHTML = "";
+
+          const categories = { bar: [], cuisine: [], snack: [] };
+          articles.forEach(a => {
+            const cat = a.bar == 1 ? "bar" : a.cuisine == 1 ? "cuisine" : "snack";
+            categories[cat].push(a);
+          });
+
+          for (const cat of ["bar", "cuisine", "snack"]) {
+            const section = document.createElement("div");
+            section.innerHTML = `<h3>${cat.toUpperCase()}</h3>`;
+
+            categories[cat].forEach(a => {
+              section.appendChild(creerBlocArticle(a, cat));
+            });
+
+            conteneur.appendChild(section);
+          }
+        });
+    }
+
+    document.getElementById("add-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const nom = document.getElementById("nom").value;
+      const prix = parseFloat(document.getElementById("prix").value);
+      const cat = document.getElementById("categorie").value;
+
+      fetch("php/ajouter_article.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nom, prix, categorie: cat })
+      })
+        .then(res => res.json())
+        .then(resp => {
+          const msg = document.getElementById("add-message");
+          msg.textContent = resp.message;
+          msg.className = resp.success ? "success" : "error";
+          if (resp.success) {
+            document.getElementById("add-form").reset();
+            chargerArticles();
+          }
+        });
+    });
+
+    function modifierArticle(id, nom, prix, cat) {
+      const nouveauNom = prompt("Nom :", nom);
+      if (nouveauNom === null) return;
+      const nouveauPrix = prompt("Prix (EUR) :", prix);
+      if (nouveauPrix === null) return;
+
+      fetch("php/modifier_article.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, nom: nouveauNom, prix: parseFloat(nouveauPrix), categorie: cat })
+      })
+        .then(res => res.json())
+        .then(resp => {
+          alert(resp.message || "Article modifie.");
+          if (resp.success) chargerArticles();
+        });
+    }
+
+    function supprimerArticle(id) {
+      if (!confirm("Supprimer cet article ?")) return;
+      fetch("php/supprimer_article.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id })
+      })
+        .then(res => res.json())
+        .then(resp => {
+          alert(resp.message || "Article supprime.");
+          if (resp.success) chargerArticles();
+        });
+    }
+
+    function viderArchive() {
+      if (!confirm("Supprimer toutes les commandes archivees ?")) return;
+      fetch("php/vider_archive.php", { method: "POST" })
+        .then(res => res.json())
+        .then(resp => {
+          const msg = document.getElementById("archive-message");
+          msg.textContent = resp.message;
+          msg.className = resp.success ? "success" : "error";
+        });
+    }
+
+    chargerArticles();
+
+    document.addEventListener("gesturestart", function (e) {
+      e.preventDefault();
+    });
+
+    let autoRoles = {};
+
+    function chargerEtatRoles() {
+      fetch("php/get_auto_mode.php")
+        .then(res => res.json())
+        .then(data => {
+          autoRoles = data;
+
+          ["bar", "cuisine", "snack"].forEach(role => {
+            const btn = document.getElementById("toggle-" + role);
+            const actif = autoRoles[role];
+            btn.textContent = actif ? "Actif" : "Inactif";
+            btn.classList.toggle("is-active", actif);
+            btn.classList.toggle("is-inactive", !actif);
+            btn.title = actif ? "Mode automatique actif" : "Mode automatique inactif";
+            btn.setAttribute("aria-pressed", actif ? "true" : "false");
+          });
+        });
+    }
+
+    function toggleRole(role) {
+      const newState = !autoRoles[role];
+
+      fetch("php/set_auto_mode.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role, actif: newState })
+      })
+      .then(res => res.json())
+      .then(resp => {
+        if (resp.success) {
+          autoRoles[role] = newState;
+          chargerEtatRoles();
+        } else {
+          alert("Erreur : " + resp.message);
+        }
+      });
+    }
+
+    chargerEtatRoles();
+  </script>
+  <script src="js/server_status.js?v=dev-20260510-01"></script>
+</body>
+</html>

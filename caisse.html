@@ -1,0 +1,438 @@
+﻿﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Bar Exterieur / Caisse</title>
+  <link rel="stylesheet" href="css/style.css?v=dev-20260508-03">
+    
+  <!-- Apparence PWA / mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#e9d2ae">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cocotte Commande">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden; /* empÃªche le scroll gÃ©nÃ©ral */
+    }
+
+    header {
+      background-color: #e9d2ae;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      position: relative;
+    }
+
+    header img {
+      height: 40px;
+    }
+
+    header h1 {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    #clock {
+      font-size: 20px;
+      font-weight: bold;
+      width: 100px; /* Largeur fixe = plus de dÃ©calage */
+      text-align: right;
+    }
+
+
+    .container {
+      display: flex;
+      height: calc(100vh - 80px); /* 100% hauteur - header (~80px) */
+      padding: 20px;
+      gap: 30px;
+      box-sizing: border-box;
+    }
+
+    .commande-table {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .commande-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .commande-table thead {
+      background-color: #eeeeee;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .commande-corps {
+      flex: 1;
+      overflow-y: auto;
+      border-top: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .commande-entete {
+      flex: 0 0 auto;
+    }
+
+    .commande-corps {
+      flex: 1;
+      overflow-y: auto;
+      border-top: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .commande-corps table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .commande-corps td {
+      padding: 6px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .prix-total {
+      flex: 0 0 auto;
+      text-align: right;
+      font-weight: bold;
+      font-size: 16px;
+      margin-top: 5px;
+    }
+
+    .commande-gauche, .commande-droite {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border: 3px solid #335533;
+      overflow: hidden;
+      padding: 15px;
+    }
+
+    .commande-gauche h2,
+    .commande-droite h2 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 20px;
+      margin-bottom: 10px;
+      margin-top: -10 px;
+      color: #335533;
+    }
+
+    .actions-top {
+      display: flex;
+      gap: 10px;
+      margin-left: auto;
+    }
+
+    .actions-top button {
+      background-color: #d9d9d9;
+      border: none;
+      padding: 8px 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10px;
+    }
+
+    table thead th {
+      background-color: #eeeeee;
+      padding: 6px;
+      text-align: left;
+    }
+
+    table tbody td {
+      padding: 6px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .prix-total {
+      text-align: right;
+      font-weight: bold;
+      font-size: 16px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+    }
+
+    .table-scrollable {
+      flex: 1;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      border-top: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .categories {
+      display: flex;
+      gap: 10px;
+      height: 300px; /* un peu plus haut quâ€™avant */
+      margin-top: auto; /* envoie les catÃ©gories tout en bas */
+    }
+
+    .categorie-col {
+      flex: 1;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 5px;
+      box-sizing: border-box;
+    }
+
+    .categorie-col h3 {
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .categorie-col button {
+      display: block;
+      width: 100%;
+      margin: 4px 0;
+      padding: 8px;
+      background-color: #d9d9d9;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .commande-droite .commande-bloc {
+      border: 2px solid #335533;
+      margin-bottom: 10px;
+    }
+
+    .commande-droite #commandes-en-cours {
+      flex: 1;
+      overflow-y: auto;
+      border-top: 1px solid #ccc;
+      padding-top: 5px;
+    }
+
+    #commande-lignes tr:hover {
+      background-color: #f0f0f0;
+      cursor: pointer;
+    }
+
+    .commande-header {
+      font-weight: bold;
+      padding: 5px 10px;
+      background-color: #f5f5f5;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .commande-header-row {
+      display: grid;
+      grid-template-columns: 1fr 3fr 2fr 2fr;
+      gap: 5px;
+      font-weight: bold;
+      padding: 5px 10px;
+    }
+
+    .commande-ligne {
+      display: grid;
+      grid-template-columns: 1fr 3fr 2fr 2fr;
+      gap: 5px;
+      padding: 5px 10px;
+    }
+
+    .fermer-btn {
+      background-color: #d9d9d9;
+      border: none;
+      padding: 4px 8px;
+      cursor: pointer;
+    }
+
+    .popup-parfums {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    
+    .popup-content {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 300px;
+      width: 90%;
+      text-align: center;
+    }
+    
+    #popup-boules {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    
+    #popup-boules button {
+      padding: 8px 12px;
+      font-size: 14px;
+      border: none;
+      background-color: #e9d2ae;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    
+    #popup-annuler {
+      margin-top: 15px;
+      background-color: #e57373;
+      color: white;
+      padding: 8px 20px;
+      border-radius: 6px;
+    }
+
+    /* Statut couleurs */
+    .commande-orange .commande-header { background-color: #d7903e; }
+    .commande-jaune .commande-header { background-color: #e7e072; color: black; }
+    .commande-verte .commande-header { background-color: #668f61; color: white; }
+
+  </style>
+</head>
+<body class="page-caisse">
+  <header>
+    <img src="assets/logo.png" alt="Logo Chez Cocotte" onclick="location.href='index.html'" height="40">
+    <h1>BAR EXTERIEUR/CAISSE</h1>
+    <div class="server-status" id="server-status" aria-live="polite" aria-label="Etat serveur">
+      <span class="server-status-item server-status-item-internet" data-server-status="internet">
+        <span class="server-status-label">Internet</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-battery" data-server-status="battery">
+        <span class="server-status-label">Batterie</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-time" data-server-status="time">
+        <span class="server-status-value" id="clock">HH:MM:SS</span>
+      </span>
+      <button type="button" class="header-theme-btn" title="Activer le mode sombre" aria-label="Activer le mode sombre" aria-pressed="false">◐</button>
+      <button type="button" class="header-refresh-btn" title="Recharger la page" aria-label="Recharger la page">↻</button>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- COLONNE GAUCHE : SAISIE -->
+    <div class="commande-gauche">
+      <h2>
+        <span>SAISIE DE COMMANDE: [x] </span>
+        <span class="actions-top">
+          <button id="msgBtn">MSG</button>
+          <button id="annulBtn">ANNUL</button>
+          <button id="validerBtn">VALIDER</button>
+        </span>
+      </h2>
+
+      <div class="commande-table">
+        <div class="commande-corps">
+          <table>
+            <thead>
+              <tr>
+                <th>NB</th>
+                <th>ARTICLE</th>
+                <th>CATEGORIE</th>
+                <th>PRIX</th>
+              </tr>
+            </thead>
+            <tbody id="commande-lignes">
+              <!-- Lignes dynamiques -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="prix-total">
+          PRIX : <span id="prix-total">0.00</span> EUR
+        </div>
+      </div>
+
+      <div class="categories">
+        <div class="categorie-col" id="col-bar">
+          <h3>BAR</h3>
+          <!-- Boutons dynamiques -->
+        </div>
+        <div class="categorie-col" id="col-cuisine">
+          <h3>CUISINE</h3>
+          <!-- Boutons dynamiques -->
+        </div>
+        <div class="categorie-col" id="col-snack">
+          <h3>SNACK</h3>
+          <!-- Boutons dynamiques -->
+        </div>
+      </div>
+    </div>
+
+    <!-- COLONNE DROITE : COMMANDES EN COURS -->
+    <div class="commande-droite">
+      <h2>COMMANDES EN COURS</h2>
+      <div id="commandes-en-cours">
+        <!-- GÃ©nÃ©rÃ© par JS -->
+      </div>
+    </div>
+  </div>
+
+
+  <div id="popup-parfums" class="popup-parfums">
+   <div class="popup-content">
+     <h3>Choisissez les parfums</h3>
+     <div id="popup-boules"></div>
+     <div class="popup-actions">
+       <button id="popup-annuler">Annuler</button>
+     </div>
+   </div>
+  </div>
+
+
+  <script>
+    function chargerNumeroCommande() {
+      fetch("php/get_next_commande_id.php")
+        .then(res => res.json())
+        .then(data => {
+          const id = data.next_id;
+          const titre = document.querySelector(".commande-gauche h2 span:first-child");
+          if (id && titre) {
+            titre.textContent = `SAISIE DE COMMANDE : ${id}`;
+          }
+        });
+    }
+
+    chargerNumeroCommande();
+
+    document.addEventListener('gesturestart', function (e) {
+      e.preventDefault();
+    });
+  </script>
+
+  <script src="js/fetch_commande.js"></script>
+  <script src="js/server_status.js?v=dev-20260508-03"></script>
+</body>
+
+</html>

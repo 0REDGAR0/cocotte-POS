@@ -1,0 +1,209 @@
+﻿﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>STATUT</title>
+  <link rel="stylesheet" href="css/style.css?v=dev-20260508-03">
+      
+  <!-- Apparence PWA / mobile -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#e9d2ae">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cocotte Commande">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: 'CocotteFont', sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #e9d2ae;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    header img {
+      height: 40px;
+    }
+
+    h1 {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    #clock {
+      font-size: 20px;
+      font-weight: bold;
+      width: 100px;
+      text-align: right;
+    }
+
+    #commandes-container {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 15px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      box-sizing: border-box;
+    }
+
+    .commande-bloc {
+      border: 3px solid #335533;
+      padding: 0;
+    }
+
+    .commande-header {
+      padding: 10px 15px;
+      font-weight: bold;
+      font-size: 22px;
+      text-align: left;
+      color: white;
+    }
+
+    .commande-orange .commande-header {
+      background-color: #d7903e;
+    }
+
+    .commande-jaune .commande-header {
+      background-color: #e7e072;
+      color: black;
+    }
+
+    .commande-verte .commande-header {
+      background-color: #668f61;
+    }
+
+    .commande-ligne {
+      display: grid;
+      grid-template-columns: 1fr 3fr 2fr 2fr;
+      gap: 5px;
+      padding: 10px 15px;
+      border-top: 1px solid #ccc;
+      font-size: 20px;
+    }
+
+    .commande-ligne-head {
+      font-weight: bold;
+      background-color: #eeeeee;
+    }
+  </style>
+</head>
+<body class="page-statut">
+  <header>
+    <img src="assets/logo.png" alt="Logo" onclick="location.href='index.html'">
+    <h1>STATUT</h1>
+    <div class="server-status" id="server-status" aria-live="polite" aria-label="Etat serveur">
+      <span class="server-status-item server-status-item-internet" data-server-status="internet">
+        <span class="server-status-label">Internet</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-battery" data-server-status="battery">
+        <span class="server-status-label">Batterie</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-time" data-server-status="time">
+        <span class="server-status-value" id="clock">HH:MM:SS</span>
+      </span>
+      <button type="button" class="header-theme-btn" title="Activer le mode sombre" aria-label="Activer le mode sombre" aria-pressed="false">◐</button>
+      <button type="button" class="header-refresh-btn" title="Recharger la page" aria-label="Recharger la page">↻</button>
+    </div>
+  </header>
+
+  <div id="commandes-container"></div>
+
+  <script>
+    const sonNotif = new Audio("assets/sounds/NotifRoles.mp3");
+    let commandesConnues = [];
+
+    function chargerCommandesStatut() {
+      fetch("php/get_commandes.php")
+        .then(res => res.json())
+        .then(commandes => {
+          const container = document.getElementById("commandes-container");
+
+          const idsActuels = commandes.map(c => c.id);
+          const nouvelles = idsActuels.filter(id => !commandesConnues.includes(id));
+          if (nouvelles.length > 0) {
+            sonNotif.play().catch(() => {
+              console.warn("Son bloqué par le navigateur");
+            });
+          }
+
+          commandesConnues = idsActuels;
+          container.innerHTML = "";
+
+          commandes.forEach(cmd => {
+            if (cmd.statut !== "en_cours") return; // Ne garde que les commandes actives
+
+            const statuts = cmd.articles.map(a => a.statut);
+            const allEnCours = statuts.every(s => s === "en_cours");
+            const allPrets = statuts.every(s => s === "pret" || s === "terminé");
+
+            let couleur = "commande-jaune";
+            if (allEnCours) couleur = "commande-orange";
+            else if (allPrets) couleur = "commande-verte";
+
+            const bloc = document.createElement("div");
+            bloc.className = `commande-bloc ${couleur}`;
+
+            const header = document.createElement("div");
+            header.className = "commande-header";
+            header.textContent = `COMMANDE NUMÉRO: ${cmd.id}`;
+            bloc.appendChild(header);
+
+            const headRow = document.createElement("div");
+            headRow.className = "commande-ligne commande-ligne-head";
+            headRow.innerHTML = "<div>NB</div><div>ARTICLE</div><div>CATEGORIE</div><div>STATUT</div>";
+            bloc.appendChild(headRow);
+
+            cmd.articles.forEach(art => {
+              const ligne = document.createElement("div");
+              ligne.className = "commande-ligne";
+              // Detection d'un message personnalise
+              if (art.nom && art.nom.toLowerCase().startsWith("message")) {
+                ligne.classList.add("ligne-message");
+              }
+              ligne.innerHTML = `
+                <div>${art.quantite || 1}</div>
+                <div>${art.nom}</div>
+                <div>${art.categorie.toUpperCase()}</div>
+                <div>${art.statut.toUpperCase()}</div>
+              `;
+              bloc.appendChild(ligne);
+            });
+
+            container.appendChild(bloc);
+          });
+        });
+    }
+
+    setInterval(chargerCommandesStatut, 3000);
+    chargerCommandesStatut();
+
+    document.addEventListener('gesturestart', function (e) {
+      e.preventDefault();
+    });
+
+  </script>
+  <script src="js/server_status.js?v=dev-20260508-03"></script>
+</body>
+</html>

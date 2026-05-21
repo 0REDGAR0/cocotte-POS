@@ -1,0 +1,372 @@
+﻿﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>CUISINE</title>
+  <link rel="stylesheet" href="css/style.css?v=dev-20260508-03">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#e9d2ae">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Cocotte Commande">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: 'CocotteFont', sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: #e9d2ae;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    header img {
+      height: 40px;
+    }
+
+    h1 {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 24px;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    #clock {
+      font-size: 20px;
+      font-weight: bold;
+      width: 100px;
+      text-align: right;
+    }
+
+    #commandes-container {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 10px 15px;
+    }
+
+    .commande-bloc {
+      border: 3px solid #335533;
+      margin: 15px;
+    }
+
+    .commande-header {
+      background-color: #668f61;
+      color: white;
+      padding: 10px 15px;
+      font-weight: bold;
+      font-size: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .commande-ligne {
+      display: grid;
+      grid-template-columns: 1fr 3fr 2fr 2fr;
+      gap: 5px;
+      padding: 10px 15px;
+      border-top: 1px solid #ccc;
+      font-size: 23px;
+    }
+
+    .commande-ligne-head {
+      font-weight: bold;
+      font-size: 25px;
+      background-color: #eeeeee;
+    }
+
+    .terminer-btn {
+      background-color: #d9d9d9;
+      border: none;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    .auto-alert {
+      background-color: #ffcccc;
+      color: #a10000;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px;
+      font-size: 18px;
+      animation: clignote 1s infinite;
+    }
+
+    @keyframes clignote {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="page-cuisine">
+  <header>
+    <img src="assets/logo.png" alt="Logo" onclick="location.href='index.html'">
+    <h1>CUISINE</h1>
+    <div class="server-status" id="server-status" aria-live="polite" aria-label="Etat serveur">
+      <span class="server-status-item server-status-item-internet" data-server-status="internet">
+        <span class="server-status-label">Internet</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-battery" data-server-status="battery">
+        <span class="server-status-label">Batterie</span>
+        <span class="server-status-value">...</span>
+      </span>
+      <span class="server-status-separator" aria-hidden="true">|</span>
+      <span class="server-status-item server-status-item-time" data-server-status="time">
+        <span class="server-status-value" id="clock">HH:MM:SS</span>
+      </span>
+      <button type="button" class="header-theme-btn" title="Activer le mode sombre" aria-label="Activer le mode sombre" aria-pressed="false">◐</button>
+      <button type="button" class="header-refresh-btn" title="Recharger la page" aria-label="Recharger la page">↻</button>
+    </div>
+  </header>
+
+  <div id="auto-warning" class="auto-alert is-hidden-initial">
+    Mode automatique active - tous les articles sont marques comme PRET automatiquement.
+  </div>
+
+  <div id="commandes-container"></div>
+
+  <button id="toggle-history">⏱</button>
+
+  <div id="history-slider">
+    <div class="history-slider-header">
+      <h3 class="history-slider-title">Dernieres commandes</h3>
+      <button type="button" class="history-slider-close" title="Fermer l'historique" aria-label="Fermer l'historique">X</button>
+    </div>
+    <div id="history-content" class="history-content">Chargement...</div>
+  </div>
+
+  <script>
+    const sonNotif = new Audio("assets/sounds/NotifRoles.mp3");
+    let commandesConnues = [];
+
+    function chargerCommandesCuisine() {
+      fetch("php/get_commandes.php")
+        .then(res => res.json())
+        .then(commandes => {
+          const container = document.getElementById("commandes-container");
+
+          const idsActuels = commandes
+            .filter(cmd => cmd.articles.some(a => a.categorie === "cuisine" && a.statut === "en_cours"))
+            .map(cmd => cmd.id);
+
+          const nouvelles = idsActuels.filter(id => !commandesConnues.includes(id));
+          if (nouvelles.length > 0) {
+            sonNotif.play().catch(() => {
+              console.warn("Audio bloque sans interaction");
+            });
+          }
+
+          commandesConnues = idsActuels;
+          container.innerHTML = "";
+
+          commandes.forEach(cmd => {
+            const articlesCuisine = cmd.articles.filter(a => a.categorie === "cuisine");
+            if (articlesCuisine.length === 0) return;
+
+            const encoreEnCours = articlesCuisine.some(a => a.statut === "en_cours");
+            if (!encoreEnCours) return;
+
+            const bloc = document.createElement("div");
+            bloc.className = "commande-bloc commande-card";
+            const content = document.createElement("div");
+            content.className = "commande-content";
+            const action = document.createElement("div");
+            action.className = "commande-action";
+
+            const header = document.createElement("div");
+            header.className = "commande-header";
+
+            const autres = new Set(
+              cmd.articles
+                .filter(a => a.statut === "en_cours" && a.categorie !== "cuisine")
+                .map(a => a.categorie)
+            );
+
+            let indication = "";
+            if (autres.size > 0) {
+              indication = " - " + [...autres].map(cat => "+ " + cat.charAt(0).toUpperCase() + cat.slice(1)).join(", ");
+            }
+
+            header.innerHTML = `<span class="commande-title">COMMANDE NUMERO: ${cmd.id}${indication}</span>`;
+            const timer = document.createElement("span");
+            timer.className = "commande-timer";
+            header.appendChild(timer);
+
+            calculerEtAfficherTemps(cmd.date, timer);
+            content.appendChild(header);
+
+            const headRow = document.createElement("div");
+            headRow.className = "commande-ligne commande-ligne-head";
+            headRow.innerHTML = "<div>NB</div><div>ARTICLE</div><div>CATEGORIE</div><div>STATUT</div>";
+            content.appendChild(headRow);
+
+            articlesCuisine.forEach(art => {
+              const ligne = document.createElement("div");
+              ligne.className = "commande-ligne";
+              if (art.nom && art.nom.toLowerCase().startsWith("message")) {
+                ligne.classList.add("ligne-message");
+              }
+              ligne.innerHTML = `
+                <div>${art.quantite || 1}</div>
+                <div>${art.nom}</div>
+                <div>${art.categorie.toUpperCase()}</div>
+                <div>${art.statut.toUpperCase()}</div>
+              `;
+              content.appendChild(ligne);
+            });
+
+            const btn = document.createElement("button");
+            btn.className = "terminer-btn";
+            btn.textContent = "TERMINE";
+            btn.onclick = () => {
+              btn.disabled = true;
+              marquerPret(cmd.id);
+            };
+
+            action.appendChild(btn);
+            bloc.appendChild(content);
+            bloc.appendChild(action);
+            container.appendChild(bloc);
+          });
+        });
+    }
+
+    function marquerPret(commande_id) {
+      fetch("php/update_statut.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          commande_id: commande_id,
+          categorie: "cuisine"
+        })
+      }).then(() => {
+        chargerCommandesCuisine();
+      });
+    }
+
+    setInterval(chargerCommandesCuisine, 3000);
+    chargerCommandesCuisine();
+
+    document.addEventListener('gesturestart', function (e) {
+      e.preventDefault();
+    });
+
+    function calculerEtAfficherTemps(dateISO, spanCible) {
+      const created = new Date(dateISO);
+
+      function update() {
+        const now = new Date();
+        const elapsed = Math.floor((now - created) / 1000);
+        const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+        const seconds = (elapsed % 60).toString().padStart(2, '0');
+        spanCible.textContent = `⏱ ${minutes}:${seconds}`;
+      }
+
+      update();
+      return setInterval(update, 1000);
+    }
+
+    const toggleBtn = document.getElementById("toggle-history");
+    const slider = document.getElementById("history-slider");
+    const closeHistoryBtn = document.querySelector(".history-slider-close");
+    const content = document.getElementById("history-content");
+
+    toggleBtn.addEventListener("click", () => {
+      slider.style.right = "";
+      const shouldOpen = !slider.classList.contains("is-open");
+      slider.classList.toggle("is-open", shouldOpen);
+      if (shouldOpen) {
+        chargerHistorique();
+      }
+    });
+
+    closeHistoryBtn.addEventListener("click", () => {
+      slider.style.right = "";
+      slider.classList.remove("is-open");
+    });
+
+    function chargerHistorique() {
+      fetch("php/get_commandes.php")
+        .then(res => res.json())
+        .then(commandes => {
+          const recentPretes = commandes
+            .filter(c => c.articles.some(a => a.categorie === "cuisine" && a.statut === "pret"))
+            .slice(-3)
+            .reverse();
+
+          if (recentPretes.length === 0) {
+            content.innerHTML = "<p>Aucune commande recente.</p>";
+            return;
+          }
+
+          content.innerHTML = "";
+          recentPretes.forEach(cmd => {
+            const div = document.createElement("div");
+            div.className = "history-card";
+
+            let lignes = cmd.articles
+              .filter(a => a.categorie === "cuisine" && a.statut === "pret")
+              .map(a => `<div>- ${a.quantite || 1} x ${a.nom}</div>`)
+              .join("");
+
+            div.innerHTML = `
+              <strong>Commande #${cmd.id}</strong>
+              ${lignes}
+              <button class="history-action" onclick="retablirCommande(${cmd.id})">Recuperer</button>
+            `;
+            content.appendChild(div);
+          });
+        });
+    }
+
+    function retablirCommande(commande_id) {
+      fetch("php/retablir_commande.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commande_id, categorie: "cuisine" })
+      })
+      .then(res => res.json())
+      .then(resp => {
+        if (resp.success) {
+          chargerCommandesCuisine();
+          chargerHistorique();
+        } else {
+          alert("Erreur : " + resp.message);
+        }
+      });
+    }
+
+    function verifierModeAuto() {
+      fetch("php/get_auto_mode.php")
+        .then(res => res.json())
+        .then(data => {
+          const actif = data["cuisine"];
+          if (actif) {
+            document.getElementById("auto-warning").style.display = "block";
+          }
+        });
+    }
+
+    verifierModeAuto();
+  </script>
+  <script src="js/server_status.js?v=dev-20260508-03"></script>
+</body>
+</html>
